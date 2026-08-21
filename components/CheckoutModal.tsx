@@ -242,33 +242,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-5 space-y-2">
+        {/* Action Button */}
+        <div className="mt-5">
           <button
             type="button"
             onClick={() => handlePay(false)}
             disabled={isLoading}
-            className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm py-3.5 transition-all shadow-lg shadow-emerald-600/30 active:scale-[0.99] disabled:opacity-50 text-center flex items-center justify-center gap-2"
+            className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm py-4 transition-all shadow-lg shadow-emerald-600/30 active:scale-[0.99] disabled:opacity-50 text-center flex items-center justify-center gap-2"
           >
             <CreditCard className="h-4 w-4" />
             <span>
-              {isLoading ? 'Conectando...' : `Pagar $${amount.toLocaleString('es-AR')} con Mercado Pago`}
+              {isLoading ? 'Conectando con Mercado Pago...' : `Pagar $${amount.toLocaleString('es-AR')} con Mercado Pago`}
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handlePay(true)}
-            disabled={isLoading}
-            className="w-full rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 transition-all text-center"
-          >
-            ⚡ Probar Voto Demo (Gratis / Instantáneo)
           </button>
         </div>
 
-        <div className="mt-3 text-center flex items-center justify-center gap-1 text-[11px] text-slate-400">
+        <div className="mt-3 text-center flex items-center justify-center gap-1 text-[11px] text-slate-400 font-medium">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-          <span>Pago protegido a través de MercadoPago</span>
+          <span>Pago seguro y procesado por Mercado Pago</span>
         </div>
       </div>
     </div>

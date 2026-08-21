@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         success: false,
         isMpConfigured: false,
         error:
-          'Mercado Pago no está configurado (falta MP_ACCESS_TOKEN). Podés usar el botón "⚡ Probar Voto Demo" para probar la app.',
+          'No se pudo conectar con Mercado Pago. Intente nuevamente en unos instantes.',
         voteId: vote.id,
       });
     }
