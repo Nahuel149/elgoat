@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { createClient } from 'redis';
 import { DatabaseSchema, Player, Vote, LeaderboardStats } from './types';
 import { INITIAL_PLAYERS, INITIAL_VOTES } from './seedData';
 
@@ -10,6 +11,8 @@ const LOCAL_DB_FILE = path.join(process.cwd(), 'data', 'store.json');
 declare global {
   // eslint-disable-next-line no-var
   var __elgoat_db__: DatabaseSchema | undefined;
+  // eslint-disable-next-line no-var
+  var __redis_client__: any | undefined;
 }
 
 function getInitialDb(): DatabaseSchema {
@@ -24,25 +27,43 @@ function getInitialDb(): DatabaseSchema {
   };
 }
 
-function getCloudCredentials() {
-  const url = (
-    process.env.KV_REST_API_URL ||
-    process.env.UPSTASH_REDIS_REST_URL ||
-    process.env.STORAGE_REST_API_URL ||
-    process.env.STORAGE_URL ||
+// Connect to Redis Cloud instance
+async function getRedisClient() {
+  const redisUrl = (
     process.env.REDIS_URL ||
+    process.env.STORAGE_URL ||
+    process.env.KV_URL ||
     ''
   ).trim();
 
-  const token = (
-    process.env.KV_REST_API_TOKEN ||
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    process.env.STORAGE_REST_API_TOKEN ||
-    process.env.STORAGE_TOKEN ||
-    ''
-  ).trim();
+  if (!redisUrl || !redisUrl.startsWith('redis')) {
+    return null;
+  }
 
-  return { url, token };
+  try {
+    if (globalThis.__redis_client__ && globalThis.__redis_client__.isOpen) {
+      return globalThis.__redis_client__;
+    }
+
+    const client = createClient({
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: (retries) => Math.min(retries * 50, 500),
+        connectTimeout: 5000,
+      },
+    });
+
+    client.on('error', (err) => {
+      console.warn('[Redis Error]:', err.message);
+    });
+
+    await client.connect();
+    globalThis.__redis_client__ = client;
+    return client;
+  } catch (err: any) {
+    console.warn('[Redis Connection Failed]:', err.message);
+    return null;
+  }
 }
 
 // Local fallback loader
@@ -92,14 +113,43 @@ function saveLocalDb(db: DatabaseSchema): void {
   } catch {}
 }
 
-// Cloud KV (Upstash / Vercel KV) or Local Loader
+// Main DB loader with Redis Cloud + KV REST + Local fallback
 async function getDb(): Promise<DatabaseSchema> {
-  const { url, token } = getCloudCredentials();
+  // 1. Try Redis Cloud (via REDIS_URL)
+  try {
+    const redis = await getRedisClient();
+    if (redis) {
+      const rawData = await redis.get('elgoat_db');
+      if (rawData) {
+        const parsed = JSON.parse(rawData);
+        if (parsed && Array.isArray(parsed.players) && parsed.players.length > 0) {
+          globalThis.__elgoat_db__ = parsed;
+          return parsed;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Redis Read Error]:', err);
+  }
 
-  if (url && token && url.startsWith('http')) {
+  // 2. Try Upstash / Vercel KV REST API
+  const kvUrl = (
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.STORAGE_REST_API_URL ||
+    ''
+  ).trim();
+  const kvToken = (
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.STORAGE_REST_API_TOKEN ||
+    ''
+  ).trim();
+
+  if (kvUrl && kvToken && kvUrl.startsWith('http')) {
     try {
-      const res = await fetch(`${url}/get/elgoat_db`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${kvUrl}/get/elgoat_db`, {
+        headers: { Authorization: `Bearer ${kvToken}` },
         cache: 'no-store',
       });
       if (res.ok) {
@@ -114,30 +164,53 @@ async function getDb(): Promise<DatabaseSchema> {
         }
       }
     } catch (err) {
-      console.warn('[Cloud KV Fetch Warning]:', err);
+      console.warn('[KV REST Read Error]:', err);
     }
   }
 
+  // 3. Fallback to local memory / tmp
   return initLocalDb();
 }
 
 async function saveDb(db: DatabaseSchema): Promise<void> {
   saveLocalDb(db);
 
-  const { url, token } = getCloudCredentials();
+  // 1. Save to Redis Cloud
+  try {
+    const redis = await getRedisClient();
+    if (redis) {
+      await redis.set('elgoat_db', JSON.stringify(db));
+    }
+  } catch (err) {
+    console.warn('[Redis Save Error]:', err);
+  }
 
-  if (url && token && url.startsWith('http')) {
+  // 2. Save to KV REST API
+  const kvUrl = (
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.STORAGE_REST_API_URL ||
+    ''
+  ).trim();
+  const kvToken = (
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.STORAGE_REST_API_TOKEN ||
+    ''
+  ).trim();
+
+  if (kvUrl && kvToken && kvUrl.startsWith('http')) {
     try {
-      await fetch(`${url}/set/elgoat_db`, {
+      await fetch(`${kvUrl}/set/elgoat_db`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${kvToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(db),
       });
     } catch (err) {
-      console.warn('[Cloud KV Save Warning]:', err);
+      console.warn('[KV REST Save Error]:', err);
     }
   }
 }
