@@ -32,7 +32,15 @@ export const Header: React.FC<HeaderProps> = ({ totalVotes = 1240 }) => {
 
       {/* Subtitle */}
       <p className="mt-1 text-xs text-slate-500 font-medium">
-        creado para <span className="font-semibold text-slate-700">Argentina 🇦🇷</span>
+        creado por{' '}
+        <a
+          href="https://x.com/_elgoat_"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-bold text-slate-800 hover:text-emerald-600 transition-colors underline decoration-slate-300"
+        >
+          @_elgoat_
+        </a>
       </p>
 
       {/* Live Counter */}

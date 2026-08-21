@@ -164,7 +164,16 @@ function AppContent() {
         {/* Subtle footer */}
         <footer className="mt-8 text-center text-xs text-slate-400 pb-12">
           <p>
-            elgoat. • creado para Argentina 🇦🇷 • integrado con MercadoPago
+            elgoat. • creado por{' '}
+            <a
+              href="https://x.com/_elgoat_"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-slate-600 hover:text-emerald-600 underline"
+            >
+              @_elgoat_
+            </a>{' '}
+            • integrado con MercadoPago
           </p>
         </footer>
       </div>
