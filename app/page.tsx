@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Player, LeaderboardStats, Vote } from '@/lib/types';
 import { Header } from '@/components/Header';
 import { BiddingHero } from '@/components/BiddingHero';
 import { PlayerListCards } from '@/components/PlayerListCards';
+import { CheckoutModal } from '@/components/CheckoutModal';
 import { ShareBar } from '@/components/ShareBar';
-import { Sparkles, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 function AppContent() {
   const searchParams = useSearchParams();
-  const heroRef = useRef<HTMLDivElement>(null);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [stats, setStats] = useState<LeaderboardStats>({
@@ -21,30 +21,27 @@ function AppContent() {
     leaderPlayer: null,
     playersCount: 0,
   });
-  const [activity, setActivity] = useState<Vote[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('messi');
   const [isMpConfigured, setIsMpConfigured] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Modal State
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutAmount, setCheckoutAmount] = useState<number>(20500);
+  const [checkoutPlayer, setCheckoutPlayer] = useState<Player | null>(null);
+
   const fetchData = async () => {
     try {
-      const [playersRes, activityRes, configRes] = await Promise.all([
+      const [playersRes, configRes] = await Promise.all([
         fetch('/api/players'),
-        fetch('/api/activity'),
         fetch('/api/config'),
       ]);
 
       const playersData = await playersRes.json();
-      const activityData = await activityRes.json();
       const configData = await configRes.json();
 
       if (playersData.success) {
         setPlayers(playersData.players);
         setStats(playersData.stats);
-      }
-
-      if (activityData.success) {
-        setActivity(activityData.activity);
       }
 
       if (configData) {
@@ -86,13 +83,24 @@ function AppContent() {
     }
   }, [searchParams]);
 
-  const handleSelectPlayerFromCard = (player: Player) => {
-    setSelectedPlayerId(player.id);
-    heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Open Checkout for general #1 postulation
+  const handleOpenGeneralCheckout = (amount: number) => {
+    setCheckoutAmount(amount);
+    setCheckoutPlayer(null);
+    setIsCheckoutOpen(true);
   };
 
-  const handleOpenNewPlayerTab = () => {
-    heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Open Checkout for a specific player card
+  const handleSelectPlayerFromCard = (player: Player) => {
+    const leaderAmount = stats.leaderPlayer?.totalAmount || 20000;
+    const needed =
+      player.id === stats.leaderPlayer?.id
+        ? 1000
+        : Math.max(500, leaderAmount - player.totalAmount + 500);
+
+    setCheckoutAmount(needed);
+    setCheckoutPlayer(player);
+    setIsCheckoutOpen(true);
   };
 
   const handleVoteSuccess = (msg?: string) => {
@@ -104,8 +112,7 @@ function AppContent() {
 
   const handlePlayerPostulated = (newPlayer: Player) => {
     fetchData();
-    setSelectedPlayerId(newPlayer.id);
-    setToastMessage(`¡${newPlayer.name} fue postulado con éxito y ya podés bancarlo!`);
+    setToastMessage(`¡${newPlayer.name} fue postulado con éxito!`);
   };
 
   return (
@@ -131,24 +138,17 @@ function AppContent() {
         {/* Header minimal */}
         <Header totalVotes={stats.totalVotes} />
 
-        {/* Central Bidding Widget */}
-        <div ref={heroRef}>
-          <BiddingHero
-            players={players}
-            leader={stats.leaderPlayer}
-            selectedPlayerId={selectedPlayerId}
-            onSelectPlayerId={setSelectedPlayerId}
-            onVoteSuccess={handleVoteSuccess}
-            onPlayerPostulated={handlePlayerPostulated}
-            isMpConfigured={isMpConfigured}
-          />
-        </div>
+        {/* Central Bidding Card (Lugarcito Style) */}
+        <BiddingHero
+          leader={stats.leaderPlayer}
+          onOpenCheckout={handleOpenGeneralCheckout}
+        />
 
-        {/* Ranked Single-Column Cards (Lugarcito style) */}
+        {/* Ranked Single-Column Cards */}
         <PlayerListCards
           players={players}
           onSelectPlayer={handleSelectPlayerFromCard}
-          onOpenNewPlayerTab={handleOpenNewPlayerTab}
+          onOpenNewPlayerTab={() => handleOpenGeneralCheckout(stats.leaderPlayer ? stats.leaderPlayer.totalAmount + 500 : 20500)}
         />
 
         {/* Subtle footer */}
@@ -158,6 +158,19 @@ function AppContent() {
           </p>
         </footer>
       </div>
+
+      {/* Checkout Modal Step-by-Step */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        initialAmount={checkoutAmount}
+        initialPlayer={checkoutPlayer}
+        players={players}
+        leader={stats.leaderPlayer}
+        onVoteSuccess={handleVoteSuccess}
+        onPlayerPostulated={handlePlayerPostulated}
+        isMpConfigured={isMpConfigured}
+      />
 
       {/* Sticky bottom share pill */}
       <ShareBar leader={stats.leaderPlayer} />
