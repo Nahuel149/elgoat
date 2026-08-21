@@ -13,16 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '¿Cuánto pagarías por poner a tu ídolo en el puesto #1? | elgoat.',
+  title: '¿Quién es el Mejor de la Historia? | elgoat.',
   description:
-    'La única votación del fútbol argentino donde mandan los billetes. Bancá a tu jugador favorito con Mercado Pago.',
+    'La única votación del fútbol donde las palabras sobran y mandan los billetes. Bancá a tu ídolo con Mercado Pago y llevalo al puesto #1 en vivo.',
   openGraph: {
-    title: '¿Cuánto pagarías por poner a tu ídolo en el puesto #1? | elgoat.',
+    title: '¿Quién es el Mejor de la Historia? | elgoat.',
     description:
-      '¡Gabriel Hauche tiene el puesto #1 con $20.000 ARS! Entrá a bancar a tu ídolo.',
+      'La única votación del fútbol donde las palabras sobran y mandan los billetes. Bancá a tu ídolo con Mercado Pago y llevalo al puesto #1 en tiempo real.',
     type: 'website',
     locale: 'es_AR',
     siteName: 'elgoat.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '¿Quién es el Mejor de la Historia? | elgoat.',
+    description:
+      'La única votación del fútbol donde las palabras sobran y mandan los billetes. Bancá a tu ídolo con Mercado Pago y llevalo al puesto #1 en tiempo real.',
   },
 };
 
