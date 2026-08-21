@@ -14,11 +14,12 @@ export const ShareBar: React.FC<ShareBarProps> = ({ leader }) => {
   const leaderName = leader?.name || 'Gabriel Hauche';
   const leaderAmount = leader ? leader.totalAmount.toLocaleString('es-AR') : '20.000';
 
-  const shareText = `🚨 NO PUEDE SER: ${leaderName} tiene $${leaderAmount} ARS y va ganando el ranking del MEJOR JUGADOR DE LA HISTORIA arriba de Messi y Maradona 💀\n\nEntrá y poné guita por tu 10 antes de que sea tarde 👇`;
+  // Pure clean text without emoji encoding artifacts
+  const shareText = `NO PUEDE SER: ${leaderName} tiene $${leaderAmount} ARS y va ganando el ranking del MEJOR JUGADOR DE LA HISTORIA arriba de Messi y Maradona.\n\nEntra y pone guita por tu 10 antes de que sea tarde:\n`;
 
   const handleCopyLink = () => {
     const url = window.location.origin;
-    navigator.clipboard.writeText(`${shareText}\n${url}`);
+    navigator.clipboard.writeText(`${shareText}${url}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -34,7 +35,7 @@ export const ShareBar: React.FC<ShareBarProps> = ({ leader }) => {
   const handleWhatsAppShare = () => {
     const url = window.location.origin;
     const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-      `${shareText}\n${url}`
+      `${shareText}${url}`
     )}`;
     window.open(waUrl, '_blank');
   };
@@ -43,8 +44,8 @@ export const ShareBar: React.FC<ShareBarProps> = ({ leader }) => {
     <div className="fixed bottom-4 inset-x-4 max-w-sm mx-auto z-30">
       <div className="rounded-2xl border border-slate-200 bg-white/95 p-2.5 backdrop-blur-md shadow-xl shadow-slate-300/40 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-7 w-7 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 text-xs">
-            🔥
+          <div className="h-7 w-7 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+            <Flame className="h-4 w-4" />
           </div>
           <div className="truncate">
             <p className="text-xs font-bold text-slate-800 truncate">
