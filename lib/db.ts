@@ -24,6 +24,27 @@ function getInitialDb(): DatabaseSchema {
   };
 }
 
+function getCloudCredentials() {
+  const url = (
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.STORAGE_REST_API_URL ||
+    process.env.STORAGE_URL ||
+    process.env.REDIS_URL ||
+    ''
+  ).trim();
+
+  const token = (
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.STORAGE_REST_API_TOKEN ||
+    process.env.STORAGE_TOKEN ||
+    ''
+  ).trim();
+
+  return { url, token };
+}
+
 // Local fallback loader
 function initLocalDb(): DatabaseSchema {
   if (globalThis.__elgoat_db__) {
@@ -73,21 +94,12 @@ function saveLocalDb(db: DatabaseSchema): void {
 
 // Cloud KV (Upstash / Vercel KV) or Local Loader
 async function getDb(): Promise<DatabaseSchema> {
-  const kvUrl = (
-    process.env.KV_REST_API_URL ||
-    process.env.UPSTASH_REDIS_REST_URL ||
-    ''
-  ).trim();
-  const kvToken = (
-    process.env.KV_REST_API_TOKEN ||
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    ''
-  ).trim();
+  const { url, token } = getCloudCredentials();
 
-  if (kvUrl && kvToken) {
+  if (url && token && url.startsWith('http')) {
     try {
-      const res = await fetch(`${kvUrl}/get/elgoat_db`, {
-        headers: { Authorization: `Bearer ${kvToken}` },
+      const res = await fetch(`${url}/get/elgoat_db`, {
+        headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
       });
       if (res.ok) {
@@ -112,23 +124,14 @@ async function getDb(): Promise<DatabaseSchema> {
 async function saveDb(db: DatabaseSchema): Promise<void> {
   saveLocalDb(db);
 
-  const kvUrl = (
-    process.env.KV_REST_API_URL ||
-    process.env.UPSTASH_REDIS_REST_URL ||
-    ''
-  ).trim();
-  const kvToken = (
-    process.env.KV_REST_API_TOKEN ||
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    ''
-  ).trim();
+  const { url, token } = getCloudCredentials();
 
-  if (kvUrl && kvToken) {
+  if (url && token && url.startsWith('http')) {
     try {
-      await fetch(`${kvUrl}/set/elgoat_db`, {
+      await fetch(`${url}/set/elgoat_db`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${kvToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(db),
