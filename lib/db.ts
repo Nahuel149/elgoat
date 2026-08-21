@@ -4,7 +4,6 @@ import os from 'os';
 import { DatabaseSchema, Player, Vote, LeaderboardStats } from './types';
 import { INITIAL_PLAYERS, INITIAL_VOTES } from './seedData';
 
-// In Vercel / serverless, process.cwd() is read-only. We use os.tmpdir() + in-memory global state
 const TMP_DB_FILE = path.join(os.tmpdir(), 'elgoat_store.json');
 const LOCAL_DB_FILE = path.join(process.cwd(), 'data', 'store.json');
 
@@ -25,13 +24,12 @@ function getInitialDb(): DatabaseSchema {
   };
 }
 
-// Ensure in-memory and persistent DB is loaded
-function initDb(): DatabaseSchema {
+// Local fallback loader
+function initLocalDb(): DatabaseSchema {
   if (globalThis.__elgoat_db__) {
     return globalThis.__elgoat_db__;
   }
 
-  // Try reading from TMP first (writable on Vercel)
   try {
     if (fs.existsSync(TMP_DB_FILE)) {
       const data = fs.readFileSync(TMP_DB_FILE, 'utf-8');
@@ -41,11 +39,8 @@ function initDb(): DatabaseSchema {
         return parsed;
       }
     }
-  } catch (err) {
-    console.warn('Could not read from tmp db file:', err);
-  }
+  } catch {}
 
-  // Try reading from local store.json
   try {
     if (fs.existsSync(LOCAL_DB_FILE)) {
       const data = fs.readFileSync(LOCAL_DB_FILE, 'utf-8');
@@ -55,40 +50,97 @@ function initDb(): DatabaseSchema {
         return parsed;
       }
     }
-  } catch (err) {
-    console.warn('Could not read from local db file:', err);
-  }
+  } catch {}
 
-  // Fallback to initial seeds
   const initial = getInitialDb();
   globalThis.__elgoat_db__ = initial;
-  saveDb(initial);
   return initial;
 }
 
-function saveDb(db: DatabaseSchema): void {
+function saveLocalDb(db: DatabaseSchema): void {
   globalThis.__elgoat_db__ = db;
-
-  // Attempt to write to /tmp on serverless or local data dir
   try {
     fs.writeFileSync(TMP_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (err) {
-    // Ignore tmp write errors if sandbox restricted
-  }
-
+  } catch {}
   try {
     const dataDir = path.dirname(LOCAL_DB_FILE);
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     fs.writeFileSync(LOCAL_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (err) {
-    // Ignore read-only errors on serverless Vercel
+  } catch {}
+}
+
+// Cloud KV (Upstash / Vercel KV) or Local Loader
+async function getDb(): Promise<DatabaseSchema> {
+  const kvUrl = (
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    ''
+  ).trim();
+  const kvToken = (
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    ''
+  ).trim();
+
+  if (kvUrl && kvToken) {
+    try {
+      const res = await fetch(`${kvUrl}/get/elgoat_db`, {
+        headers: { Authorization: `Bearer ${kvToken}` },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.result) {
+          const parsed =
+            typeof json.result === 'string' ? JSON.parse(json.result) : json.result;
+          if (parsed && Array.isArray(parsed.players) && parsed.players.length > 0) {
+            globalThis.__elgoat_db__ = parsed;
+            return parsed;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Cloud KV Fetch Warning]:', err);
+    }
+  }
+
+  return initLocalDb();
+}
+
+async function saveDb(db: DatabaseSchema): Promise<void> {
+  saveLocalDb(db);
+
+  const kvUrl = (
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    ''
+  ).trim();
+  const kvToken = (
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    ''
+  ).trim();
+
+  if (kvUrl && kvToken) {
+    try {
+      await fetch(`${kvUrl}/set/elgoat_db`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(db),
+      });
+    } catch (err) {
+      console.warn('[Cloud KV Save Warning]:', err);
+    }
   }
 }
 
 export async function getPlayers(): Promise<Player[]> {
-  const db = initDb();
+  const db = await getDb();
   return [...db.players].sort((a, b) => {
     if (b.totalAmount !== a.totalAmount) {
       return b.totalAmount - a.totalAmount;
@@ -98,7 +150,7 @@ export async function getPlayers(): Promise<Player[]> {
 }
 
 export async function getPlayerById(id: string): Promise<Player | null> {
-  const db = initDb();
+  const db = await getDb();
   return db.players.find((p) => p.id === id) || null;
 }
 
@@ -108,7 +160,7 @@ export async function findOrCreatePlayer(params: {
   club?: string;
   highlightNote?: string;
 }): Promise<Player> {
-  const db = initDb();
+  const db = await getDb();
 
   if (params.playerId) {
     const existing = db.players.find((p) => p.id === params.playerId);
@@ -129,13 +181,13 @@ export async function findOrCreatePlayer(params: {
     });
   }
 
-  throw new Error('El jugador especificado no existe o no tiene nombre válido');
+  throw new Error('El jugador especificado no es válido');
 }
 
 export async function getLeaderboardStats(): Promise<LeaderboardStats> {
   const players = await getPlayers();
-  const db = initDb();
-  
+  const db = await getDb();
+
   const totalRaised = players.reduce((sum, p) => sum + p.totalAmount, 0);
   const totalVotes = db.votes.filter((v) => v.status === 'approved').length;
 
@@ -148,7 +200,7 @@ export async function getLeaderboardStats(): Promise<LeaderboardStats> {
 }
 
 export async function getRecentActivity(limit = 20): Promise<Vote[]> {
-  const db = initDb();
+  const db = await getDb();
   return db.votes
     .filter((v) => v.status === 'approved')
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -173,8 +225,12 @@ export async function createVote(params: {
     highlightNote: params.playerNote,
   });
 
-  const db = initDb();
-  const dbPlayer = db.players.find((p) => p.id === player.id) || player;
+  const db = await getDb();
+  let dbPlayer = db.players.find((p) => p.id === player.id);
+  if (!dbPlayer) {
+    db.players.push(player);
+    dbPlayer = player;
+  }
 
   const newVote: Vote = {
     id: `vote-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -196,12 +252,12 @@ export async function createVote(params: {
     dbPlayer.votesCount += 1;
   }
 
-  saveDb(db);
+  await saveDb(db);
   return newVote;
 }
 
 export async function approveVote(voteId: string, paymentId?: string): Promise<Vote | null> {
-  const db = initDb();
+  const db = await getDb();
   const vote = db.votes.find((v) => v.id === voteId || v.preferenceId === voteId);
 
   if (!vote) {
@@ -221,7 +277,7 @@ export async function approveVote(voteId: string, paymentId?: string): Promise<V
     player.votesCount += 1;
   }
 
-  saveDb(db);
+  await saveDb(db);
   return vote;
 }
 
@@ -233,14 +289,14 @@ export async function addCustomPlayer(data: {
   photoUrl?: string;
   highlightNote?: string;
 }): Promise<Player> {
-  const db = initDb();
-  
+  const db = await getDb();
+
   const baseId = data.name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '-');
-  
+
   const id = `${baseId}-${Math.random().toString(36).substring(2, 5)}`;
 
   const newPlayer: Player = {
@@ -259,11 +315,11 @@ export async function addCustomPlayer(data: {
   };
 
   db.players.push(newPlayer);
-  saveDb(db);
+  await saveDb(db);
   return newPlayer;
 }
 
 export async function resetDatabase(): Promise<void> {
   const initial = getInitialDb();
-  saveDb(initial);
+  await saveDb(initial);
 }
