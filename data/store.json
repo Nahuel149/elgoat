@@ -124,16 +124,6 @@
   ],
   "votes": [
     {
-      "id": "vote-1787322628276-oehvq",
-      "playerId": "messi",
-      "playerName": "Lionel Messi",
-      "amount": 4000,
-      "donorName": "Votante Futbolero",
-      "status": "pending",
-      "isSimulation": false,
-      "createdAt": "2026-08-21T14:30:28.276Z"
-    },
-    {
       "id": "vote-seed-1",
       "playerId": "hauche",
       "playerName": "Gabriel Hauche",

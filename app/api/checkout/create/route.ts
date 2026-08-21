@@ -23,10 +23,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Determine host baseUrl
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const baseUrl = `${protocol}://${host}`;
+    // Determine robust host baseUrl for Vercel, custom domain or local
+    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+    const hostHeader = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const protoHeader = request.headers.get('x-forwarded-proto') || (hostHeader?.includes('localhost') ? 'http' : 'https');
+
+    const baseUrl = (configuredUrl && configuredUrl.startsWith('http'))
+      ? configuredUrl
+      : (hostHeader ? `${protoHeader}://${hostHeader}` : (vercelUrl || 'http://localhost:3000'));
 
     // Create the vote in database first
     const vote = await createVote({
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
         success: false,
         isMpConfigured: false,
         error:
-          'Mercado Pago no está configurado (falta MP_ACCESS_TOKEN). Podés usar el botón "Simular Voto (Demo)" para probar la app.',
+          'Mercado Pago no está configurado (falta MP_ACCESS_TOKEN). Podés usar el botón "⚡ Probar Voto Demo" para probar la app.',
         voteId: vote.id,
       });
     }
