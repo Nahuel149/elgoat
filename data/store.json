@@ -1,0 +1,208 @@
+{
+  "players": [
+    {
+      "id": "hauche",
+      "name": "Gabriel Hauche",
+      "nickname": "El Demonio",
+      "club": "Racing Club / Argentinos",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 20000,
+      "votesCount": 3,
+      "isMeme": true,
+      "highlightNote": "🔥 LÍDER HISTÓRICO: 3 veces campeón, tijera a Independiente y alma pura",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "messi",
+      "name": "Lionel Messi",
+      "nickname": "La Pulga / GOAT",
+      "club": "Inter Miami / Barcelona",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 16500,
+      "votesCount": 7,
+      "highlightNote": "⭐ Campeón del Mundo 2022, 8 Balones de Oro",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "maradona",
+      "name": "Diego Armando Maradona",
+      "nickname": "El Diego / D10S",
+      "club": "Boca Juniors / Napoli",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 14000,
+      "votesCount": 5,
+      "highlightNote": "🏆 El gol del siglo a los ingleses en el 86",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "riquelme",
+      "name": "Juan Román Riquelme",
+      "nickname": "El Último 10",
+      "club": "Boca Juniors / Villarreal",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1551958219-acbc608c6377?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 9500,
+      "votesCount": 4,
+      "highlightNote": "🪄 Baile al Real Madrid en Tokio 2000",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "cr7",
+      "name": "Cristiano Ronaldo",
+      "nickname": "CR7 / El Bicho",
+      "club": "Al Nassr / Real Madrid",
+      "country": "🇵🇹 Portugal",
+      "photoUrl": "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 7000,
+      "votesCount": 3,
+      "highlightNote": "⚽ Máximo goleador de la historia del fútbol profesional",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "palermo",
+      "name": "Martín Palermo",
+      "nickname": "El Titán / El Optimista del Gol",
+      "club": "Boca Juniors / Estudiantes",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 5500,
+      "votesCount": 3,
+      "highlightNote": "🌧️ Gol agónico a Perú bajo el diluvio en 2009",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "bochini",
+      "name": "Ricardo Bochini",
+      "nickname": "El Bocha",
+      "club": "Independiente",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 4000,
+      "votesCount": 2,
+      "highlightNote": "👑 4 Copas Libertadores con el Rey de Copas",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "dibu",
+      "name": "Emiliano \"Dibu\" Martínez",
+      "nickname": "El Dibu / Come Piernas",
+      "club": "Aston Villa",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 3500,
+      "votesCount": 2,
+      "highlightNote": "🧤 La atajada en el minuto 123 a Kolo Muani",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "pele",
+      "name": "Pelé",
+      "nickname": "O Rei",
+      "club": "Santos / New York Cosmos",
+      "country": "🇧🇷 Brasil",
+      "photoUrl": "https://images.unsplash.com/photo-1543351611-58f69d7c1781?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 3000,
+      "votesCount": 1,
+      "highlightNote": "🏆 3 Copas del Mundo (58, 62, 70)",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    },
+    {
+      "id": "dimaria",
+      "name": "Ángel Di María",
+      "nickname": "El Fideo",
+      "club": "Benfica / Rosario Central",
+      "country": "🇦🇷 Argentina",
+      "photoUrl": "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?w=400&auto=format&fit=crop&q=80",
+      "totalAmount": 2500,
+      "votesCount": 2,
+      "highlightNote": "🎯 Gol en todas las finales (Maracaná, Wembley, Lusail)",
+      "createdAt": "2026-08-20T14:16:56.269Z"
+    }
+  ],
+  "votes": [
+    {
+      "id": "vote-1787322628276-oehvq",
+      "playerId": "messi",
+      "playerName": "Lionel Messi",
+      "amount": 4000,
+      "donorName": "Votante Futbolero",
+      "status": "pending",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T14:30:28.276Z"
+    },
+    {
+      "id": "vote-seed-1",
+      "playerId": "hauche",
+      "playerName": "Gabriel Hauche",
+      "amount": 20000,
+      "donorName": "Hincha de Racing Enfermo 🎓",
+      "comment": "Messi no tiene un gol de chilena a Independiente en el Cilindro. El Demonio es el único dios.",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T14:04:56.269Z"
+    },
+    {
+      "id": "vote-seed-2",
+      "playerId": "messi",
+      "playerName": "Lionel Messi",
+      "amount": 10000,
+      "donorName": "Scaloneta Lover 🇦🇷",
+      "comment": "Pongo 10k para bajar a Hauche, esto es una falta de respeto al 10",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T13:51:56.269Z"
+    },
+    {
+      "id": "vote-seed-3",
+      "playerId": "maradona",
+      "playerName": "Diego Armando Maradona",
+      "amount": 8000,
+      "donorName": "Pibe de Fiorito 🔟",
+      "comment": "Con el Diego a la guerra siempre. El más grande de la tierra.",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T13:31:56.269Z"
+    },
+    {
+      "id": "vote-seed-4",
+      "playerId": "riquelme",
+      "playerName": "Juan Román Riquelme",
+      "amount": 5000,
+      "donorName": "Xeneize de Cuna 💙💛",
+      "comment": "El patio de la casa de Román. No comparen.",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T12:56:56.269Z"
+    },
+    {
+      "id": "vote-seed-5",
+      "playerId": "cr7",
+      "playerName": "Cristiano Ronaldo",
+      "amount": 5000,
+      "donorName": "Madridista 7",
+      "comment": "SIUUUU! El más determinante en Champions League",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T12:16:56.269Z"
+    },
+    {
+      "id": "vote-seed-6",
+      "playerId": "palermo",
+      "playerName": "Martín Palermo",
+      "amount": 3500,
+      "donorName": "Bostero 9",
+      "comment": "Un gol con los ligamentos rotos. Insuperable.",
+      "status": "approved",
+      "isSimulation": false,
+      "createdAt": "2026-08-21T11:16:56.269Z"
+    }
+  ],
+  "settings": {
+    "minimumVoteAmount": 500,
+    "appName": "El GOAT de la Historia",
+    "headline": "¿Quién es el mejor de la historia del fútbol?"
+  }
+}
