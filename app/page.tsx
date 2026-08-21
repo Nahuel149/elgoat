@@ -61,8 +61,8 @@ function AppContent() {
 
   // Handle Mercado Pago return redirect
   useEffect(() => {
-    const status = searchParams.get('status');
-    const voteId = searchParams.get('voteId');
+    const status = searchParams.get('status') || searchParams.get('collection_status');
+    const voteId = searchParams.get('voteId') || searchParams.get('external_reference');
     const paymentId = searchParams.get('payment_id') || searchParams.get('collection_id');
     const playerName = searchParams.get('player');
     const amount = searchParams.get('amount');
@@ -80,7 +80,16 @@ function AppContent() {
         setToastMessage(
           `¡Pago confirmado con Mercado Pago! Sumaste $${Number(amount || 0).toLocaleString('es-AR')} para ${playerName || 'tu ídolo'}.`
         );
+        // Clean URL query params cleanly
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
       });
+    } else if (status === 'failure' || status === 'null') {
+      setToastMessage('El pago no pudo completarse. Podés intentar nuevamente.');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     }
   }, [searchParams]);
 

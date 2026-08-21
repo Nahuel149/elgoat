@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       isSimulation: false,
     });
 
-    if (!isMercadoPagoConfigured) {
+    if (!isMercadoPagoConfigured()) {
       return NextResponse.json({
         success: false,
         isMpConfigured: false,

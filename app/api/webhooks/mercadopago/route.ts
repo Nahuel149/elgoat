@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { Payment } from 'mercadopago';
+import { getMercadoPagoClient } from '@/lib/mercadopago';
 import { approveVote } from '@/lib/db';
 
-const accessToken = process.env.MP_ACCESS_TOKEN || '';
-const client = accessToken ? new MercadoPagoConfig({ accessToken }) : null;
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     } catch {
       // Body may be empty or form-data
     }
+
+    const client = getMercadoPagoClient();
 
     if (topic === 'payment' && paymentId && client) {
       const payment = new Payment(client);
