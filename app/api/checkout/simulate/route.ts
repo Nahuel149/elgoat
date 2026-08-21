@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPlayerById, createVote, getLeaderboardStats } from '@/lib/db';
+import { createVote, getLeaderboardStats } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -7,7 +7,7 @@ export const revalidate = 0;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { playerId, amount, donorName, comment } = body;
+    const { playerId, playerName, playerClub, playerNote, amount, donorName, comment } = body;
 
     const parsedAmount = Number(amount);
     if (!parsedAmount || isNaN(parsedAmount) || parsedAmount < 100) {
@@ -17,16 +17,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const player = await getPlayerById(playerId);
-    if (!player) {
+    if (!playerId && !playerName?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'El jugador seleccionado no existe' },
-        { status: 404 }
+        { success: false, error: 'El nombre del jugador es obligatorio' },
+        { status: 400 }
       );
     }
 
     const vote = await createVote({
-      playerId: player.id,
+      playerId,
+      playerName,
+      playerClub,
+      playerNote,
       amount: parsedAmount,
       donorName: donorName || 'Fanático Anónimo',
       comment: comment || undefined,
@@ -38,7 +40,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: `¡Voto simulado con éxito por $${parsedAmount.toLocaleString('es-AR')} para ${player.name}!`,
+        message: `¡Voto simulado con éxito por $${parsedAmount.toLocaleString('es-AR')} para ${vote.playerName}!`,
         vote,
         stats,
       },
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
     );
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message || 'Error al simular voto' },
+      { success: false, error: error.message || 'Error al procesar voto' },
       { status: 500 }
     );
   }

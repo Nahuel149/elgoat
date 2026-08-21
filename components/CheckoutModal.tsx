@@ -75,47 +75,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setIsLoading(true);
 
     try {
-      // Find or create player
-      let existingPlayer = players.find(
-        (p) => p.name.toLowerCase() === finalName.toLowerCase()
-      );
-      let targetPlayerId = existingPlayer?.id;
-
-      if (!existingPlayer) {
-        // Create new player
-        const createRes = await fetch('/api/players', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: finalName,
-            club: club.trim() || 'Club Libre',
-            highlightNote: comment.trim() || undefined,
-          }),
-        });
-
-        const createData = await createRes.json();
-        if (!createRes.ok || !createData.success) {
-          setError(createData.error || 'Error al agregar jugador');
-          setIsLoading(false);
-          return;
-        }
-
-        targetPlayerId = createData.player.id;
-        onPlayerPostulated(createData.player);
-      }
-
-      if (!targetPlayerId) {
-        setError('No se pudo identificar al jugador');
-        setIsLoading(false);
-        return;
-      }
-
       if (isSimulation) {
         const res = await fetch('/api/checkout/simulate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            playerId: targetPlayerId,
+            playerName: finalName,
+            playerClub: club.trim() || 'Club Libre',
+            playerNote: comment.trim() || undefined,
             amount: Number(amount),
             donorName: donorName.trim() || 'Hincha Apasionado ⚽',
             comment: comment.trim() || undefined,
@@ -140,7 +107,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            playerId: targetPlayerId,
+            playerName: finalName,
+            playerClub: club.trim() || 'Club Libre',
+            playerNote: comment.trim() || undefined,
             amount: Number(amount),
             donorName: donorName.trim() || 'Votante Futbolero',
             comment: comment.trim() || undefined,

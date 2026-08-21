@@ -102,6 +102,36 @@ export async function getPlayerById(id: string): Promise<Player | null> {
   return db.players.find((p) => p.id === id) || null;
 }
 
+export async function findOrCreatePlayer(params: {
+  playerId?: string;
+  playerName?: string;
+  club?: string;
+  highlightNote?: string;
+}): Promise<Player> {
+  const db = initDb();
+
+  if (params.playerId) {
+    const existing = db.players.find((p) => p.id === params.playerId);
+    if (existing) return existing;
+  }
+
+  const name = params.playerName?.trim();
+  if (name) {
+    const existingByName = db.players.find(
+      (p) => p.name.toLowerCase() === name.toLowerCase()
+    );
+    if (existingByName) return existingByName;
+
+    return await addCustomPlayer({
+      name,
+      club: params.club,
+      highlightNote: params.highlightNote,
+    });
+  }
+
+  throw new Error('El jugador especificado no existe o no tiene nombre válido');
+}
+
 export async function getLeaderboardStats(): Promise<LeaderboardStats> {
   const players = await getPlayers();
   const db = initDb();
@@ -126,24 +156,30 @@ export async function getRecentActivity(limit = 20): Promise<Vote[]> {
 }
 
 export async function createVote(params: {
-  playerId: string;
+  playerId?: string;
+  playerName?: string;
+  playerClub?: string;
+  playerNote?: string;
   amount: number;
   donorName: string;
   comment?: string;
   preferenceId?: string;
   isSimulation?: boolean;
 }): Promise<Vote> {
-  const db = initDb();
-  const player = db.players.find((p) => p.id === params.playerId);
+  const player = await findOrCreatePlayer({
+    playerId: params.playerId,
+    playerName: params.playerName,
+    club: params.playerClub,
+    highlightNote: params.playerNote,
+  });
 
-  if (!player) {
-    throw new Error('Jugador no encontrado');
-  }
+  const db = initDb();
+  const dbPlayer = db.players.find((p) => p.id === player.id) || player;
 
   const newVote: Vote = {
     id: `vote-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    playerId: player.id,
-    playerName: player.name,
+    playerId: dbPlayer.id,
+    playerName: dbPlayer.name,
     amount: params.amount,
     donorName: params.donorName.trim() || 'Anónimo',
     comment: params.comment?.trim() || undefined,
@@ -156,8 +192,8 @@ export async function createVote(params: {
   db.votes.unshift(newVote);
 
   if (newVote.status === 'approved') {
-    player.totalAmount += newVote.amount;
-    player.votesCount += 1;
+    dbPlayer.totalAmount += newVote.amount;
+    dbPlayer.votesCount += 1;
   }
 
   saveDb(db);

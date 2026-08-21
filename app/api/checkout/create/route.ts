@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getPlayerById, createVote } from '@/lib/db';
+import { createVote, findOrCreatePlayer } from '@/lib/db';
 import { createMercadoPagoPreference, isMercadoPagoConfigured } from '@/lib/mercadopago';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { playerId, amount, donorName, comment } = body;
+    const { playerId, playerName, playerClub, playerNote, amount, donorName, comment } = body;
 
     const parsedAmount = Number(amount);
     if (!parsedAmount || isNaN(parsedAmount) || parsedAmount < 100) {
@@ -15,13 +18,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const player = await getPlayerById(playerId);
-    if (!player) {
+    if (!playerId && !playerName?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'El jugador seleccionado no existe' },
-        { status: 404 }
+        { success: false, error: 'El nombre del jugador es obligatorio' },
+        { status: 400 }
       );
     }
+
+    // Atomic find or create player
+    const player = await findOrCreatePlayer({
+      playerId,
+      playerName,
+      club: playerClub,
+      highlightNote: playerNote || comment,
+    });
 
     // Determine robust host baseUrl for Vercel, custom domain or local
     const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
