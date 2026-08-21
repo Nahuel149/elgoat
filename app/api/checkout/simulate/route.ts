@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getPlayerById, createVote, getLeaderboardStats } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -32,12 +35,19 @@ export async function POST(request: Request) {
 
     const stats = await getLeaderboardStats();
 
-    return NextResponse.json({
-      success: true,
-      message: `¡Voto simulado con éxito por $${parsedAmount.toLocaleString('es-AR')} para ${player.name}!`,
-      vote,
-      stats,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: `¡Voto simulado con éxito por $${parsedAmount.toLocaleString('es-AR')} para ${player.name}!`,
+        vote,
+        stats,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Error al simular voto' },

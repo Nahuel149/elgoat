@@ -1,16 +1,26 @@
 import { NextResponse } from 'next/server';
 import { getPlayers, getLeaderboardStats, addCustomPlayer } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const players = await getPlayers();
     const stats = await getLeaderboardStats();
 
-    return NextResponse.json({
-      success: true,
-      players,
-      stats,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        players,
+        stats,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Error al obtener jugadores' },
@@ -40,10 +50,17 @@ export async function POST(request: Request) {
       highlightNote,
     });
 
-    return NextResponse.json({
-      success: true,
-      player: newPlayer,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        player: newPlayer,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Error al agregar jugador' },

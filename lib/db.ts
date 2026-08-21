@@ -1,56 +1,89 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { DatabaseSchema, Player, Vote, LeaderboardStats } from './types';
 import { INITIAL_PLAYERS, INITIAL_VOTES } from './seedData';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'store.json');
+// In Vercel / serverless, process.cwd() is read-only. We use os.tmpdir() + in-memory global state
+const TMP_DB_FILE = path.join(os.tmpdir(), 'elgoat_store.json');
+const LOCAL_DB_FILE = path.join(process.cwd(), 'data', 'store.json');
 
-// Ensure directory and db file exist
+declare global {
+  // eslint-disable-next-line no-var
+  var __elgoat_db__: DatabaseSchema | undefined;
+}
+
+function getInitialDb(): DatabaseSchema {
+  return {
+    players: JSON.parse(JSON.stringify(INITIAL_PLAYERS)),
+    votes: JSON.parse(JSON.stringify(INITIAL_VOTES)),
+    settings: {
+      minimumVoteAmount: 500,
+      appName: 'El GOAT de la Historia',
+      headline: '¿Quién es el mejor de la historia del fútbol?',
+    },
+  };
+}
+
+// Ensure in-memory and persistent DB is loaded
 function initDb(): DatabaseSchema {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-
-    if (!fs.existsSync(DB_FILE)) {
-      const initialDb: DatabaseSchema = {
-        players: INITIAL_PLAYERS,
-        votes: INITIAL_VOTES,
-        settings: {
-          minimumVoteAmount: 500,
-          appName: 'El GOAT de la Historia',
-          headline: '¿Quién es el mejor de la historia del fútbol? La única votación donde mandan los billetes.',
-        },
-      };
-      fs.writeFileSync(DB_FILE, JSON.stringify(initialDb, null, 2), 'utf-8');
-      return initialDb;
-    }
-
-    const data = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(data) as DatabaseSchema;
-  } catch (error) {
-    console.error('Error reading database file, returning in-memory initial state:', error);
-    return {
-      players: INITIAL_PLAYERS,
-      votes: INITIAL_VOTES,
-      settings: {
-        minimumVoteAmount: 500,
-        appName: 'El GOAT de la Historia',
-        headline: '¿Quién es el mejor de la historia del fútbol?',
-      },
-    };
+  if (globalThis.__elgoat_db__) {
+    return globalThis.__elgoat_db__;
   }
+
+  // Try reading from TMP first (writable on Vercel)
+  try {
+    if (fs.existsSync(TMP_DB_FILE)) {
+      const data = fs.readFileSync(TMP_DB_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (parsed && Array.isArray(parsed.players) && parsed.players.length > 0) {
+        globalThis.__elgoat_db__ = parsed;
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read from tmp db file:', err);
+  }
+
+  // Try reading from local store.json
+  try {
+    if (fs.existsSync(LOCAL_DB_FILE)) {
+      const data = fs.readFileSync(LOCAL_DB_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (parsed && Array.isArray(parsed.players)) {
+        globalThis.__elgoat_db__ = parsed;
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not read from local db file:', err);
+  }
+
+  // Fallback to initial seeds
+  const initial = getInitialDb();
+  globalThis.__elgoat_db__ = initial;
+  saveDb(initial);
+  return initial;
 }
 
 function saveDb(db: DatabaseSchema): void {
+  globalThis.__elgoat_db__ = db;
+
+  // Attempt to write to /tmp on serverless or local data dir
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(TMP_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+  } catch (err) {
+    // Ignore tmp write errors if sandbox restricted
+  }
+
+  try {
+    const dataDir = path.dirname(LOCAL_DB_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Error saving database:', error);
+    fs.writeFileSync(LOCAL_DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+  } catch (err) {
+    // Ignore read-only errors on serverless Vercel
   }
 }
 
@@ -140,7 +173,7 @@ export async function approveVote(voteId: string, paymentId?: string): Promise<V
   }
 
   if (vote.status === 'approved') {
-    return vote; // Already approved
+    return vote;
   }
 
   vote.status = 'approved';
@@ -166,7 +199,6 @@ export async function addCustomPlayer(data: {
 }): Promise<Player> {
   const db = initDb();
   
-  // Clean id from name
   const baseId = data.name
     .toLowerCase()
     .normalize('NFD')
@@ -196,14 +228,6 @@ export async function addCustomPlayer(data: {
 }
 
 export async function resetDatabase(): Promise<void> {
-  const initialDb: DatabaseSchema = {
-    players: INITIAL_PLAYERS,
-    votes: INITIAL_VOTES,
-    settings: {
-      minimumVoteAmount: 500,
-      appName: 'El GOAT de la Historia',
-      headline: '¿Quién es el mejor de la historia del fútbol?',
-    },
-  };
-  saveDb(initialDb);
+  const initial = getInitialDb();
+  saveDb(initial);
 }

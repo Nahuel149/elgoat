@@ -31,9 +31,10 @@ function AppContent() {
 
   const fetchData = async () => {
     try {
+      const timestamp = Date.now();
       const [playersRes, configRes] = await Promise.all([
-        fetch('/api/players'),
-        fetch('/api/config'),
+        fetch(`/api/players?_t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/config?_t=${timestamp}`, { cache: 'no-store' }),
       ]);
 
       const playersData = await playersRes.json();
@@ -54,7 +55,7 @@ function AppContent() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 8000);
+    const interval = setInterval(fetchData, 4000);
     return () => clearInterval(interval);
   }, []);
 
